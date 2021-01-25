@@ -296,6 +296,7 @@ int main()
     int t_steps = 500;
     double delta_t = 1000.0 / (t_steps - 1.0);
     const string path = "/home/andreas/scientific-computing/geometry/cpp/out/";
+    // const string path = "/home/markus/Documents/uni/scientific-computing/scomp-programming/geometry/C++/out/";
 
     int n_v = points.size();
     vector<double> prev_U = initial_value(points);
