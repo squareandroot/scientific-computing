@@ -1,5 +1,8 @@
 # sc-geometry
 
-Exercises from chapter Geometry of course [Scientific Computing at uibk.ac.at](https://lfuonline.uibk.ac.at/public/lfuonline_lv.details?sem_id_in=20W&lvnr_id_in=702532)
+Code by Markus Fankhauser & Andreas Mair for the course [Scientific Computing at LFU](https://lfuonline.uibk.ac.at/public/lfuonline_lv.details?sem_id_in=20W&lvnr_id_in=702532)
 
-Created by Markus Fankhauser & Andreas Mair
+Chapter **Geometry** contains
+* CAD files
+* Python code for plotting .msh-files
+* C++ code for a finite element approach to head conduction modelling
