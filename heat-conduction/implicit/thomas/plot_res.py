@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-path = "/home/andreas/scientific-computing/heat-conduction/implicit/thomas/out/"
+path = "./out/"
 
 time_steps = 100
 

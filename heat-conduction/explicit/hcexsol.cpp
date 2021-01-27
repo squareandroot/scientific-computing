@@ -16,8 +16,8 @@ int main()
     double delta_x = 1.0 / (x_steps - 1.0);
     double delta_t = 1.0 / (t_steps - 1.0);
 
-    int output_n = 201;
-    const string path = "/home/andreas/scientific-computing/heat-conduction/explicit/out/";
+    int output_n = 1;
+    const string path = "./out/";
 
     vector<double> prev_temp(x_steps);
     vector<double> new_temp(x_steps);

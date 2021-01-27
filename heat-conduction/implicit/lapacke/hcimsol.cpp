@@ -21,7 +21,7 @@ int main()
     int n = x_steps - 2;
 
     int output_n = 1;
-    const string path = "/home/andreas/scientific-computing/heat-conduction/implicit/lapacke/out/";
+    const string path = "./out/";
 
     vector<double> A(4 * n);
 

@@ -19,7 +19,7 @@ int main()
     double delta_t = 1.0 / (t_steps - 1.0);
 
     int output_n = 1000;
-    const string path = "/home/andreas/scientific-computing/heat-conduction/2d/explicit/out/";
+    const string path = "./out/";
 
     vector<double> prev_temp(x_steps * y_steps);
     vector<double> new_temp(x_steps * y_steps);

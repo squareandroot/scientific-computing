@@ -34,7 +34,7 @@ int main()
     int n_y = y_steps - 2;
 
     int output_n = 5;
-    const string path = "/home/andreas/scientific-computing/heat-conduction/2d/implicit/out/";
+    const string path = "./out/";
 
     vector<double> A_x(4 * n_x);
 
