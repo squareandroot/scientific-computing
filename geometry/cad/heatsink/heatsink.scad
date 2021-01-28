@@ -1,5 +1,5 @@
-num_fins=13;
-fin_size=0.2;
+num_fins=30;
+fin_size=0.1;
 
 difference() {
     translate([-2.5,0,0]) square([5,1.5]);
