@@ -40,6 +40,7 @@
 *.exe
 *.out
 *.app
+*.vtk
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
