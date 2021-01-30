@@ -143,10 +143,11 @@ void write_vtk(string filename, vector<point> &points, vector<triangle> &triangl
 
 double euclidean_distance(const point &p1, const point &p2)
 {
-    return sqrt(pow(p1.x - p2.x,2) + pow(p1.y - p2.y,2));
+    return sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2));
 }
 
-double length_of_adjacent_lines(const vector<point> &points, const vector<line> &lines, int i) {
+double length_of_adjacent_lines(const vector<point> &points, const vector<line> &lines, int i)
+{
     int n_L = lines.size();
 
     vector<point> p(3);
@@ -155,7 +156,7 @@ double length_of_adjacent_lines(const vector<point> &points, const vector<line> 
     int counter = 0;
 
     int k = 0;
-    
+
     while (counter < 2 && k < n_L)
     {
         if (lines[k].i1 == i)
@@ -178,6 +179,7 @@ bool line_has_vertex(line the_line, int i)
 {
     if (the_line.i1 == i || the_line.i2 == i)
         return true;
+
     return false;
 }
 
@@ -195,7 +197,7 @@ double area_triangle(point p1, point p2, point p3)
 }
 
 vector<double> area_triangles(const vector<point> &points, const vector<triangle> &triangles)
-{   
+{
     int n_T = triangles.size();
 
     vector<double> areas(n_T);
@@ -306,11 +308,11 @@ vector<double> assemble_matrix(const vector<point> &points, const vector<triangl
             else
             {
 
-                B[j + n_v * i]  += h * T_fluid * 0.5 * length_of_adjacent_lines(points, lines, j);
+                B[j + n_v * i] += h * T_fluid * 0.5 * length_of_adjacent_lines(points, lines, j);
 
                 if (i == j)
                 {
-                    B[j + n_v * i]  -= h * 1.0/3.0 * length_of_adjacent_lines(points, lines, j);
+                    B[j + n_v * i] -= h * 1.0 / 3.0 * length_of_adjacent_lines(points, lines, j);
                 }
                 else
                 {
@@ -318,7 +320,7 @@ vector<double> assemble_matrix(const vector<point> &points, const vector<triangl
                     {
                         if (line_has_vertex(lines[k], i) == true && line_has_vertex(lines[k], j) == true)
                         {
-                           B[j + n_v * i]  -= 1.0/6.0 * euclidean_distance(points[i], points[j]);
+                            B[j + n_v * i] -= h * 1.0 / 6.0 * euclidean_distance(points[i], points[j]);
                         }
                     }
                 }
@@ -330,16 +332,17 @@ vector<double> assemble_matrix(const vector<point> &points, const vector<triangl
     return B;
 }
 
-vector<double> assemble_vector(vector<point> &points, const double sigma) {
+vector<double> assemble_vector(vector<point> &points, const double sigma)
+{
     int n_v = points.size();
     vector<double> S(n_v, 0.0);
 
     for (int i = 0; i < n_v; i++)
     {
         if (points[i].y <= 0.3)
-            S[i] = sigma;
+            S[i] = 1.0 / 3.0 * sigma;
     }
-    
+
     return S;
 }
 
@@ -351,7 +354,7 @@ vector<double> initial_value(const vector<point> &points)
     for (int i = 0; i < n_v; i++)
     {
         // U[i] = 350.0 - 100.0 * points[i].x/50.0 + 200.0 * sin(M_PI * 1.0/20.0 * points[i].x);
-        U[i] = pow(points[i].x,2) + pow(points[i].y,2);
+        U[i] = -1.0 * (pow(points[i].x, 2) + pow(points[i].y, 2)) + 80;
     }
 
     return U;
@@ -369,8 +372,8 @@ int main()
     cout << "Number of points:    " << points.size() << endl;
     cout << "Number of triangles: " << triangles.size() << endl;
 
-    int t_steps = 1000;
-    double delta_t =  0.1 / (t_steps - 1.0);
+    int t_steps = 100;
+    double delta_t = 1.0 / (t_steps - 1.0);
     const string path = "./out/";
 
     double sigma = 100.0;
@@ -402,10 +405,10 @@ int main()
 
             for (int j = 0; j < n_v; j++)
             {
-                sum += B[j + i * n_v] * prev_U[j] + delta_t * S[j];
+                sum += B[j + i * n_v] * prev_U[j];
             }
 
-            new_U[i] = sum;
+            new_U[i] = sum + delta_t * S[i];
         }
 
         string filename = "out-t" + to_string(k + 1) + ".vtk";
