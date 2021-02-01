@@ -376,9 +376,10 @@ int main()
     cout << "Number of points:    " << points.size() << endl;
     cout << "Number of triangles: " << triangles.size() << endl;
 
-    int t_steps = 1000;
+    int t_steps = 100000;
     double delta_t = 10.0 / (t_steps - 1.0);
     const string path = "./out/";
+    int file_count = 1000;
 
     double sigma = 100.0;
     double h = 0.1;
@@ -415,9 +416,12 @@ int main()
             new_U[i] = sum + delta_t * S[i];
         }
 
-        string filename = "out-t" + to_string(k + 1) + ".vtk";
-        write_vtk(path + filename, points, triangles, lines, new_U);
-
+        if (k % file_count == 0)
+        {
+            string filename = "out-t" + to_string(k + 1) + ".vtk";
+            write_vtk(path + filename, points, triangles, lines, new_U);
+        }
+        
         prev_U.swap(new_U);
     }
 }
