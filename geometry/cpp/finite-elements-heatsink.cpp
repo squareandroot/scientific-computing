@@ -311,11 +311,8 @@ vector<double> assemble_matrix(const vector<point> &points, const vector<triangl
                 B[j + n_v * i] += h * T_fluid * 0.5 * length_of_adjacent_lines(points, lines, j);
 
                 if (i == j)
-                {
                     B[j + n_v * i] -= h * 1.0 / 3.0 * length_of_adjacent_lines(points, lines, j);
-                }
                 else
-                {
                     for (int k = 0; k < n_L; k++)
                     {
                         if (line_has_vertex(lines[k], i) == true && line_has_vertex(lines[k], j) == true)
@@ -323,7 +320,6 @@ vector<double> assemble_matrix(const vector<point> &points, const vector<triangl
                             B[j + n_v * i] -= h * 1.0 / 6.0 * euclidean_distance(points[i], points[j]);
                         }
                     }
-                }
             }
             B[j + n_v * i] /= H;
         }
@@ -346,15 +342,23 @@ vector<double> assemble_vector(vector<point> &points, const double sigma)
     return S;
 }
 
-vector<double> initial_value(const vector<point> &points)
+vector<double> initial_value(const vector<point> &points, const vector<line> &lines, const vector<double> &S)
 {
     int n_v = points.size();
     vector<double> U(n_v);
+    double x;
+    double y;
 
     for (int i = 0; i < n_v; i++)
     {
-        // U[i] = 350.0 - 100.0 * points[i].x/50.0 + 200.0 * sin(M_PI * 1.0/20.0 * points[i].x);
-        U[i] = -1.0 * (pow(points[i].x, 2) + pow(points[i].y, 2)) + 80;
+        x = points[i].x;
+        y = points[i].y;
+
+        if (on_boundary(i, lines))
+            U[i] = 0.0 + S[i];
+        else
+            // U[i] = 350.0 - 100.0 * points[i].x/50.0 + 200.0 * sin(M_PI * 1.0/20.0 * points[i].x);
+            U[i] = pow(x, 2) + pow(y, 2) + S[i];
     }
 
     return U;
@@ -372,9 +376,10 @@ int main()
     cout << "Number of points:    " << points.size() << endl;
     cout << "Number of triangles: " << triangles.size() << endl;
 
-    int t_steps = 100;
-    double delta_t = 1.0 / (t_steps - 1.0);
+    int t_steps = 100000;
+    double delta_t = 10.0 / (t_steps - 1.0);
     const string path = "./out/";
+    int file_count = 1000;
 
     double sigma = 100.0;
     double h = 0.1;
@@ -385,7 +390,7 @@ int main()
     vector<double> B = assemble_matrix(points, triangles, lines, h, T_fluid);
     vector<double> S = assemble_vector(points, sigma);
 
-    vector<double> prev_U = initial_value(points);
+    vector<double> prev_U = initial_value(points, lines, S);
     vector<double> new_U(n_v);
 
     write_vtk(path + "out-t0.vtk", points, triangles, lines, prev_U);
@@ -411,9 +416,12 @@ int main()
             new_U[i] = sum + delta_t * S[i];
         }
 
-        string filename = "out-t" + to_string(k + 1) + ".vtk";
-        write_vtk(path + filename, points, triangles, lines, new_U);
-
+        if (k % file_count == 0)
+        {
+            string filename = "out-t" + to_string(k + 1) + ".vtk";
+            write_vtk(path + filename, points, triangles, lines, new_U);
+        }
+        
         prev_U.swap(new_U);
     }
 }
