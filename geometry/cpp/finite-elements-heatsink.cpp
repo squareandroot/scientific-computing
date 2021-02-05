@@ -214,6 +214,19 @@ vector<double> area_triangles(const vector<point> &points, const vector<triangle
     return areas;
 }
 
+bool on_boundary(int i, const vector<line> &lines)
+{
+    int n_L = lines.size();
+
+    for (int j = 0; j < n_L; j++)
+    {
+        if (lines[j].i1 == i || lines[j].i2 == i)
+            return true;
+    }
+
+    return false;
+}
+
 void compute_bc(int i, triangle t, const vector<point> &points, double &b, double &c)
 {
     point p1, p2, p3;
@@ -253,19 +266,6 @@ void compute_bc(int i, triangle t, const vector<point> &points, double &b, doubl
     double det = x1 * y2 - x1 * y3 - x2 * y1 + x2 * y3 + x3 * y1 - x3 * y2;
     b = (y2 - y3) / det;
     c = (x3 - x2) / det;
-}
-
-bool on_boundary(int i, const vector<line> &lines)
-{
-    int n_L = lines.size();
-
-    for (int j = 0; j < n_L; j++)
-    {
-        if (lines[j].i1 == i || lines[j].i2 == i)
-            return true;
-    }
-
-    return false;
 }
 
 vector<double> compute_H(const vector<point> &points, const vector<triangle> &triangles, const vector<line> &lines)
@@ -319,35 +319,41 @@ vector<double> assemble_matrix(const vector<point> &points, const vector<triangl
                     double b_ik, b_jk, c_ik, c_jk;
                     compute_bc(i, triangles[k], points, b_ik, c_ik);
                     compute_bc(j, triangles[k], points, b_jk, c_jk);
-                    B[j + n_v * i] -= areas[k] * (b_ik * b_jk + c_ik * c_jk);
+                    B[i + n_v * j] -= areas[k] * (b_ik * b_jk + c_ik * c_jk);
                 }
             }
             
-            if (on_boundary(i, lines))
+            if (i == j && on_boundary(i, lines))
             {
-                B[j + n_v * i] += h * T_fluid * 0.5 * length_of_adjacent_lines(points, lines, j);
-
-                if (i == j)
-                    B[j + n_v * i] -= h * 1.0 / 3.0 * length_of_adjacent_lines(points, lines, j);
-                else
-                    for (int k = 0; k < n_L; k++)
+                double ell  = 0.0;
+                for (int k = 0; k < n_L; k++)
+                {
+                    if (line_has_vertex(lines[k], i))
                     {
-                        if (line_has_vertex(lines[k], i) == true && line_has_vertex(lines[k], j) == true)
-                        {
-                            B[j + n_v * i] -= h * 1.0 / 6.0 * euclidean_distance(points[i], points[j]);
-                        }
+                        point p1 = points[lines[k].i1];
+                        point p2 = points[lines[k].i2];
+                        double length = sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2));
+
+                        B[i + n_v * k] -= h * length/6.0;
+
+                        ell += length;
                     }
+                    
+                }
+                B[i + n_v * i] -= h*ell / (3.0 * H[i]);
+                
             }
-            B[j + n_v * i] /= H[i];
+            
         }
     }
 
     return B;
 }
 
-vector<double> assemble_vector(const vector<point> &points, const vector<line> &lines, const vector<double> &H, const double sigma)
+vector<double> assemble_vector(const vector<point> &points, const vector<line> &lines, const vector<double> &H, const double &sigma, const double &T_fluid)
 {
     int n_v = points.size();
+    int n_L = lines.size();
     vector<double> S(n_v, 0.0);
 
     for (int i = 0; i < n_v; i++)
@@ -356,15 +362,27 @@ vector<double> assemble_vector(const vector<point> &points, const vector<line> &
             S[i] = 1.0 / 3.0 * sigma;
     }
 
-    // double b = 1.0;
+    double b = 1.0;
 
-    // for (int i = 0; i < n_v; i++)
-    // {
-    //     if (on_boundary(i, lines))
-    //     {
-    //         S[i] += 1.0/2.0 * b * length_of_adjacent_lines(points, lines, i)/H[i];
-    //     }
-    // }
+    for (int i = 0; i < n_v; i++)
+    {
+        if (on_boundary(i, lines))
+        {
+            double ell = 0.0;
+            for (int k = 0; k < n_L; k++)
+            {
+                if (line_has_vertex(lines[k], i))
+                {
+                    point p1 = points[lines[k].i1];
+                    point p2 = points[lines[k].i2];
+                    
+                    ell += sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2));
+                }
+                
+            }
+            S[i] += 1.0/2.0 * T_fluid * ell;
+        }
+    }
     
 
     return S;
@@ -382,11 +400,7 @@ vector<double> initial_value(const vector<point> &points, const vector<line> &li
         x = points[i].x;
         y = points[i].y;
 
-        if (on_boundary(i, lines))
-            U[i] = 0.0 + S[i];
-        else
-            // U[i] = 350.0 - 100.0 * points[i].x/50.0 + 200.0 * sin(M_PI * 1.0/20.0 * points[i].x);
-            U[i] = pow(x, 2) + pow(y, 2) + S[i];
+        U[i] = 25.0;
     }
 
     return U;
@@ -398,7 +412,7 @@ int main()
     vector<point> points;
     vector<triangle> triangles;
     vector<line> lines;
-    read_mesh("../cad/heatsink/heatsink_8_0.3.msh", points, triangles, lines);
+    read_mesh("../cad/heatsink/heatsink_30_0.1.msh", points, triangles, lines);
     // read_mesh("simple.msh", points, triangles, lines);
 
     cout << "Number of points:    " << points.size() << endl;
@@ -418,7 +432,7 @@ int main()
     vector<double> H = compute_H(points, triangles, lines);
 
     vector<double> B = assemble_matrix(points, triangles, lines, H, h, T_fluid);
-    vector<double> S = assemble_vector(points, lines, H, sigma);
+    vector<double> S = assemble_vector(points, lines, H, sigma, T_fluid);
 
     vector<double> prev_U = initial_value(points, lines, S);
     vector<double> new_U(n_v);
