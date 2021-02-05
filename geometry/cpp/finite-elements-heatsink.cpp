@@ -287,9 +287,8 @@ vector<double> compute_H(const vector<point> &points, const vector<triangle> &tr
                     H[i] += areas[k];
             }
         }
-        
     }
-    
+
     return H;
 }
 
@@ -311,7 +310,7 @@ vector<double> assemble_matrix(const vector<point> &points, const vector<triangl
 
         for (int j = 0; j < n_v; j++)
         {
-            
+
             for (int k = 0; k < n_T; k++)
             {
                 if (triangle_has_vertex(triangles[k], i) == true && triangle_has_vertex(triangles[k], j) == true)
@@ -322,17 +321,19 @@ vector<double> assemble_matrix(const vector<point> &points, const vector<triangl
                     B[j + n_v * i] -= areas[k] * (b_ik * b_jk + c_ik * c_jk);
                 }
             }
-            
+
+            // Robin boundary conditions
             if (on_boundary(i, lines))
             {
-                B[j + n_v * i] += h * T_fluid * 0.5 * length_of_adjacent_lines(points, lines, j);
+                B[j + n_v * i] += h * T_fluid * 0.5 * length_of_adjacent_lines(points, lines, j); // h * int_Rand T_fluid * phi dx
 
+                // - h * int_Rand u * phi dx
                 if (i == j)
                     B[j + n_v * i] -= h * 1.0 / 3.0 * length_of_adjacent_lines(points, lines, j);
                 else
                     for (int k = 0; k < n_L; k++)
                     {
-                        if (line_has_vertex(lines[k], i) == true && line_has_vertex(lines[k], j) == true)
+                        if (line_has_vertex(lines[k], i) && line_has_vertex(lines[k], j))
                         {
                             B[j + n_v * i] -= h * 1.0 / 6.0 * euclidean_distance(points[i], points[j]);
                         }
@@ -356,17 +357,6 @@ vector<double> assemble_vector(const vector<point> &points, const vector<line> &
             S[i] = 1.0 / 3.0 * sigma;
     }
 
-    // double b = 1.0;
-
-    // for (int i = 0; i < n_v; i++)
-    // {
-    //     if (on_boundary(i, lines))
-    //     {
-    //         S[i] += 1.0/2.0 * b * length_of_adjacent_lines(points, lines, i)/H[i];
-    //     }
-    // }
-    
-
     return S;
 }
 
@@ -374,19 +364,10 @@ vector<double> initial_value(const vector<point> &points, const vector<line> &li
 {
     int n_v = points.size();
     vector<double> U(n_v);
-    double x;
-    double y;
 
     for (int i = 0; i < n_v; i++)
     {
-        x = points[i].x;
-        y = points[i].y;
-
-        if (on_boundary(i, lines))
-            U[i] = 0.0 + S[i];
-        else
-            // U[i] = 350.0 - 100.0 * points[i].x/50.0 + 200.0 * sin(M_PI * 1.0/20.0 * points[i].x);
-            U[i] = pow(x, 2) + pow(y, 2) + S[i];
+        U[i] = 25.0;
     }
 
     return U;
@@ -451,7 +432,7 @@ int main()
             string filename = "out-t" + to_string(k + 1) + ".vtk";
             write_vtk(path + filename, points, triangles, lines, new_U);
         }
-        
+
         prev_U.swap(new_U);
     }
 }
