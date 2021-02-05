@@ -268,7 +268,32 @@ bool on_boundary(int i, const vector<line> &lines)
     return false;
 }
 
-vector<double> assemble_matrix(const vector<point> &points, const vector<triangle> &triangles, const vector<line> &lines, const double &h, const double &T_fluid)
+vector<double> compute_H(const vector<point> &points, const vector<triangle> &triangles, const vector<line> &lines)
+{
+    int n_v = points.size();
+    int n_T = triangles.size();
+
+    vector<double> H(n_v, 0.0);
+
+    vector<double> areas = area_triangles(points, triangles);
+
+    for (int i = 0; i < n_v; i++)
+    {
+        if (on_boundary(i, lines) == true)
+        {
+            for (int k = 0; k < n_T; k++)
+            {
+                if (triangle_has_vertex(triangles[k], i) == true)
+                    H[i] += areas[k];
+            }
+        }
+        
+    }
+    
+    return H;
+}
+
+vector<double> assemble_matrix(const vector<point> &points, const vector<triangle> &triangles, const vector<line> &lines, const vector<double> &H, const double &h, const double &T_fluid)
 {
 
     int n_v = points.size();
@@ -283,31 +308,23 @@ vector<double> assemble_matrix(const vector<point> &points, const vector<triangl
 
     for (int i = 0; i < n_v; i++)
     {
-        double H = 0.0;
-        for (int k = 0; k < n_T; k++)
-        {
-            if (triangle_has_vertex(triangles[k], i) == true)
-                H += areas[k];
-        }
 
         for (int j = 0; j < n_v; j++)
         {
-            if (on_boundary(i, lines) == false)
+            
+            for (int k = 0; k < n_T; k++)
             {
-                for (int k = 0; k < n_T; k++)
+                if (triangle_has_vertex(triangles[k], i) == true && triangle_has_vertex(triangles[k], j) == true)
                 {
-                    if (triangle_has_vertex(triangles[k], i) == true && triangle_has_vertex(triangles[k], j) == true)
-                    {
-                        double b_ik, b_jk, c_ik, c_jk;
-                        compute_bc(i, triangles[k], points, b_ik, c_ik);
-                        compute_bc(j, triangles[k], points, b_jk, c_jk);
-                        B[j + n_v * i] -= areas[k] * (b_ik * b_jk + c_ik * c_jk);
-                    }
+                    double b_ik, b_jk, c_ik, c_jk;
+                    compute_bc(i, triangles[k], points, b_ik, c_ik);
+                    compute_bc(j, triangles[k], points, b_jk, c_jk);
+                    B[j + n_v * i] -= areas[k] * (b_ik * b_jk + c_ik * c_jk);
                 }
             }
-            else
+            
+            if (on_boundary(i, lines))
             {
-
                 B[j + n_v * i] += h * T_fluid * 0.5 * length_of_adjacent_lines(points, lines, j);
 
                 if (i == j)
@@ -321,14 +338,14 @@ vector<double> assemble_matrix(const vector<point> &points, const vector<triangl
                         }
                     }
             }
-            B[j + n_v * i] /= H;
+            B[j + n_v * i] /= H[i];
         }
     }
 
     return B;
 }
 
-vector<double> assemble_vector(vector<point> &points, const double sigma)
+vector<double> assemble_vector(const vector<point> &points, const vector<line> &lines, const vector<double> &H, const double sigma)
 {
     int n_v = points.size();
     vector<double> S(n_v, 0.0);
@@ -338,6 +355,17 @@ vector<double> assemble_vector(vector<point> &points, const double sigma)
         if (points[i].y <= 0.3)
             S[i] = 1.0 / 3.0 * sigma;
     }
+
+    // double b = 1.0;
+
+    // for (int i = 0; i < n_v; i++)
+    // {
+    //     if (on_boundary(i, lines))
+    //     {
+    //         S[i] += 1.0/2.0 * b * length_of_adjacent_lines(points, lines, i)/H[i];
+    //     }
+    // }
+    
 
     return S;
 }
@@ -387,8 +415,10 @@ int main()
 
     int n_v = points.size();
 
-    vector<double> B = assemble_matrix(points, triangles, lines, h, T_fluid);
-    vector<double> S = assemble_vector(points, sigma);
+    vector<double> H = compute_H(points, triangles, lines);
+
+    vector<double> B = assemble_matrix(points, triangles, lines, H, h, T_fluid);
+    vector<double> S = assemble_vector(points, lines, H, sigma);
 
     vector<double> prev_U = initial_value(points, lines, S);
     vector<double> new_U(n_v);
