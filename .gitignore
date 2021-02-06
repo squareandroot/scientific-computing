@@ -1,10 +1,6 @@
 ### Folders ###
 .vscode/
 
-### Scripts ###
-*.bat
-*.sh
-
 ### C++ ###
 # Prerequisites
 *.d
