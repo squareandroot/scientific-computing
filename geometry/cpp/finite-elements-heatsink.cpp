@@ -305,7 +305,7 @@ vector<double> assemble_matrix(const vector<point> &points, const vector<triangl
                         point p1 = points[lines[k].i1];
                         point p2 = points[lines[k].i2];
 
-                        B[j + n_v * k] -= h * euclidean_distance(p1, p2) / 6.0;
+                        B[k + n_v * i] -= h * euclidean_distance(p1, p2) / 6.0;
                     }
 
                 B[j + n_v * i] -= h * length_of_adjacent_lines(points, lines, i) / 3.0;
