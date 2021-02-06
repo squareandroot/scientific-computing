@@ -300,7 +300,7 @@ vector<double> assemble_matrix(const vector<point> &points, const vector<triangl
             if (i == j && on_boundary(i, lines))
             {
                 for (int k = 0; k < n_L; k++)
-                    if (line_has_vertex(lines[k], i))
+                    if (i != k && line_has_vertex(lines[k], i) && on_boundary(k, lines))
                     {
                         point p1 = points[lines[k].i1];
                         point p2 = points[lines[k].i2];
