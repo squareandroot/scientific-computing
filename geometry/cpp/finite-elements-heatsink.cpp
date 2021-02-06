@@ -49,7 +49,6 @@ void read_mesh(string filename, vector<point> &points, vector<triangle> &triangl
     ifstream fs(filename.c_str());
     string s = "";
 
-    // read until nodes
     while (s != "$Nodes")
         fs >> s;
 
@@ -78,7 +77,6 @@ void read_mesh(string filename, vector<point> &points, vector<triangle> &triangl
         fs >> id >> type >> unused >> unused >> unused;
         cout << type << " ";
 
-        // populate the vectors lines and triangles.
         if (type == 1)
         {
             int i1, i2;
@@ -93,7 +91,6 @@ void read_mesh(string filename, vector<point> &points, vector<triangle> &triangl
         }
         else
         {
-            // read till the end of the line
             char c = ' ';
             while (c != '\n')
                 fs.get(c);
@@ -280,7 +277,6 @@ vector<double> assemble_matrix(const vector<point> &points, const vector<triangl
     int n_L = lines.size();
     int n_T = triangles.size();
 
-    // set B to zero
     vector<double> B(n_v * n_v, 0.0);
 
     vector<double> areas = area_triangles(points, triangles);
@@ -357,7 +353,7 @@ int main()
     cout << "Number of triangles: " << triangles.size() << endl;
 
     int t_steps = 100000;
-    double delta_t = 10.0 / (t_steps - 1.0);
+    double delta_t = 25.0 / (t_steps - 1.0);
     const string path = "./out/";
     int file_count = 1000;
 
@@ -384,8 +380,12 @@ int main()
             B[i] += 1;
     }
 
+    ofstream max_heat(path + "max-heat.out");
+
     for (int k = 0; k < t_steps; k++)
     {
+        double max_entry = 0.0;
+
         for (int i = 0; i < n_v; i++)
         {
             double sum = 0.0;
@@ -394,10 +394,14 @@ int main()
                 sum += B[j + i * n_v] * prev_U[j];
 
             new_U[i] = sum + delta_t * S[i];
+            
+            if (new_U[i] > max_entry)
+                max_entry = new_U[i];
         }
 
         if (k % file_count == 0)
         {
+            max_heat << max_entry << endl;
             string filename = "out-t" + to_string(k + 1) + ".vtk";
             write_vtk(path + filename, points, triangles, lines, new_U);
         }
