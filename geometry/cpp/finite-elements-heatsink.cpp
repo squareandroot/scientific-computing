@@ -326,7 +326,7 @@ vector<double> assemble_vector(const vector<point> &points, const vector<line> &
     {
         if (points[i].y <= 0.3)
             S[i] = 1.0 / 3.0 * sigma;
-        else if (on_boundary(i, lines))
+        if (on_boundary(i, lines))
             S[i] += 1.0 / 2.0 * T_fluid * length_of_adjacent_lines(points, lines, i) / H[i];
     }
 
