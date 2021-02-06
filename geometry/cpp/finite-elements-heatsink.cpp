@@ -96,9 +96,7 @@ void read_mesh(string filename, vector<point> &points, vector<triangle> &triangl
             // read till the end of the line
             char c = ' ';
             while (c != '\n')
-            {
                 fs.get(c);
-            }
         }
     }
 
@@ -120,25 +118,19 @@ void write_vtk(string filename, vector<point> &points, vector<triangle> &triangl
 
     fs << "POINTS " << n_points << " double" << endl;
     for (int i = 0; i < n_points; i++)
-    {
         fs << points[i].x << " " << points[i].y << " " << 0.0 << endl;
-    }
     fs << endl;
 
     fs << "POLYGONS " << n_triangles << " " << 4 * n_triangles << endl;
     for (int i = 0; i < n_triangles; i++)
-    {
         fs << 3 << " " << triangles[i].i1 << " " << triangles[i].i2 << " " << triangles[i].i3 << endl;
-    }
     fs << endl;
 
     fs << "POINT_DATA " << n_points << endl;
     fs << "SCALARS value double 1" << endl;
     fs << "LOOKUP_TABLE default" << endl;
     for (int i = 0; i < n_points; i++)
-    {
         fs << point_data[i] << endl;
-    }
 }
 
 double euclidean_distance(const point &p1, const point &p2)
@@ -154,7 +146,6 @@ double length_of_adjacent_lines(const vector<point> &points, const vector<line> 
     p[2] = points[i];
 
     int counter = 0;
-
     int k = 0;
 
     while (counter < 2 && k < n_L)
@@ -219,10 +210,8 @@ bool on_boundary(int i, const vector<line> &lines)
     int n_L = lines.size();
 
     for (int j = 0; j < n_L; j++)
-    {
         if (lines[j].i1 == i || lines[j].i2 == i)
             return true;
-    }
 
     return false;
 }
@@ -274,22 +263,13 @@ vector<double> compute_H(const vector<point> &points, const vector<triangle> &tr
     int n_T = triangles.size();
 
     vector<double> H(n_v, 0.0);
-
     vector<double> areas = area_triangles(points, triangles);
 
     for (int i = 0; i < n_v; i++)
-    {
-        if (on_boundary(i, lines) == true)
-        {
             for (int k = 0; k < n_T; k++)
-            {
                 if (triangle_has_vertex(triangles[k], i) == true)
                     H[i] += areas[k];
-            }
-        }
-        
-    }
-    
+
     return H;
 }
 
@@ -301,51 +281,38 @@ vector<double> assemble_matrix(const vector<point> &points, const vector<triangl
     int n_T = triangles.size();
 
     // set B to zero
-    vector<double> B(n_v * n_v);
-    fill(begin(B), end(B), 0.0);
+    vector<double> B(n_v * n_v, 0.0);
 
     vector<double> areas = area_triangles(points, triangles);
 
     for (int i = 0; i < n_v; i++)
-    {
-
         for (int j = 0; j < n_v; j++)
         {
-            
             for (int k = 0; k < n_T; k++)
-            {
                 if (triangle_has_vertex(triangles[k], i) == true && triangle_has_vertex(triangles[k], j) == true)
                 {
                     double b_ik, b_jk, c_ik, c_jk;
                     compute_bc(i, triangles[k], points, b_ik, c_ik);
                     compute_bc(j, triangles[k], points, b_jk, c_jk);
-                    B[i + n_v * j] -= areas[k] * (b_ik * b_jk + c_ik * c_jk);
+                    B[j + n_v * i] -= areas[k] * (b_ik * b_jk + c_ik * c_jk);
                 }
-            }
-            
+
             if (i == j && on_boundary(i, lines))
             {
-                double ell  = 0.0;
                 for (int k = 0; k < n_L; k++)
-                {
                     if (line_has_vertex(lines[k], i))
                     {
                         point p1 = points[lines[k].i1];
                         point p2 = points[lines[k].i2];
-                        double length = sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2));
 
-                        B[i + n_v * k] -= h * length/6.0;
-
-                        ell += length;
+                        B[j + n_v * k] -= h * euclidean_distance(p1, p2) / 6.0;
                     }
-                    
-                }
-                B[i + n_v * i] -= h*ell / (3.0 * H[i]);
-                
+
+                B[j + n_v * i] -= h * length_of_adjacent_lines(points, lines, i) / 3.0;
             }
-            
+
+            B[j + n_v * i] /= H[i];
         }
-    }
 
     return B;
 }
@@ -353,37 +320,15 @@ vector<double> assemble_matrix(const vector<point> &points, const vector<triangl
 vector<double> assemble_vector(const vector<point> &points, const vector<line> &lines, const vector<double> &H, const double &sigma, const double &T_fluid)
 {
     int n_v = points.size();
-    int n_L = lines.size();
     vector<double> S(n_v, 0.0);
 
     for (int i = 0; i < n_v; i++)
     {
         if (points[i].y <= 0.3)
             S[i] = 1.0 / 3.0 * sigma;
+        else if (on_boundary(i, lines))
+            S[i] += 1.0 / 2.0 * T_fluid * length_of_adjacent_lines(points, lines, i) / H[i];
     }
-
-    double b = 1.0;
-
-    for (int i = 0; i < n_v; i++)
-    {
-        if (on_boundary(i, lines))
-        {
-            double ell = 0.0;
-            for (int k = 0; k < n_L; k++)
-            {
-                if (line_has_vertex(lines[k], i))
-                {
-                    point p1 = points[lines[k].i1];
-                    point p2 = points[lines[k].i2];
-                    
-                    ell += sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2));
-                }
-                
-            }
-            S[i] += 1.0/2.0 * T_fluid * ell;
-        }
-    }
-    
 
     return S;
 }
@@ -392,16 +337,9 @@ vector<double> initial_value(const vector<point> &points, const vector<line> &li
 {
     int n_v = points.size();
     vector<double> U(n_v);
-    double x;
-    double y;
 
     for (int i = 0; i < n_v; i++)
-    {
-        x = points[i].x;
-        y = points[i].y;
-
         U[i] = 25.0;
-    }
 
     return U;
 }
@@ -412,7 +350,7 @@ int main()
     vector<point> points;
     vector<triangle> triangles;
     vector<line> lines;
-    read_mesh("../cad/heatsink/heatsink_30_0.1.msh", points, triangles, lines);
+    read_mesh("../cad/heatsink/heatsink_8_0.3.msh", points, triangles, lines);
     // read_mesh("simple.msh", points, triangles, lines);
 
     cout << "Number of points:    " << points.size() << endl;
@@ -453,9 +391,7 @@ int main()
             double sum = 0.0;
 
             for (int j = 0; j < n_v; j++)
-            {
                 sum += B[j + i * n_v] * prev_U[j];
-            }
 
             new_U[i] = sum + delta_t * S[i];
         }
@@ -465,7 +401,7 @@ int main()
             string filename = "out-t" + to_string(k + 1) + ".vtk";
             write_vtk(path + filename, points, triangles, lines, new_U);
         }
-        
+
         prev_U.swap(new_U);
     }
 }
