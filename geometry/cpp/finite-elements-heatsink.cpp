@@ -346,7 +346,7 @@ int main()
     vector<point> points;
     vector<triangle> triangles;
     vector<line> lines;
-    read_mesh("../cad/heatsink/heatsink_8_0.3.msh", points, triangles, lines);
+    read_mesh("../cad/heatsink/heatsink_8_0.3_1.5.msh", points, triangles, lines);
     // read_mesh("simple.msh", points, triangles, lines);
 
     cout << "Number of points:    " << points.size() << endl;
