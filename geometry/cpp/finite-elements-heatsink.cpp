@@ -49,7 +49,6 @@ void read_mesh(string filename, vector<point> &points, vector<triangle> &triangl
     ifstream fs(filename.c_str());
     string s = "";
 
-    // read until nodes
     while (s != "$Nodes")
         fs >> s;
 
@@ -78,7 +77,6 @@ void read_mesh(string filename, vector<point> &points, vector<triangle> &triangl
         fs >> id >> type >> unused >> unused >> unused;
         cout << type << " ";
 
-        // populate the vectors lines and triangles.
         if (type == 1)
         {
             int i1, i2;
@@ -93,12 +91,9 @@ void read_mesh(string filename, vector<point> &points, vector<triangle> &triangl
         }
         else
         {
-            // read till the end of the line
             char c = ' ';
             while (c != '\n')
-            {
                 fs.get(c);
-            }
         }
     }
 
@@ -120,25 +115,19 @@ void write_vtk(string filename, vector<point> &points, vector<triangle> &triangl
 
     fs << "POINTS " << n_points << " double" << endl;
     for (int i = 0; i < n_points; i++)
-    {
         fs << points[i].x << " " << points[i].y << " " << 0.0 << endl;
-    }
     fs << endl;
 
     fs << "POLYGONS " << n_triangles << " " << 4 * n_triangles << endl;
     for (int i = 0; i < n_triangles; i++)
-    {
         fs << 3 << " " << triangles[i].i1 << " " << triangles[i].i2 << " " << triangles[i].i3 << endl;
-    }
     fs << endl;
 
     fs << "POINT_DATA " << n_points << endl;
     fs << "SCALARS value double 1" << endl;
     fs << "LOOKUP_TABLE default" << endl;
     for (int i = 0; i < n_points; i++)
-    {
         fs << point_data[i] << endl;
-    }
 }
 
 double euclidean_distance(const point &p1, const point &p2)
@@ -154,7 +143,6 @@ double length_of_adjacent_lines(const vector<point> &points, const vector<line> 
     p[2] = points[i];
 
     int counter = 0;
-
     int k = 0;
 
     while (counter < 2 && k < n_L)
@@ -214,6 +202,17 @@ vector<double> area_triangles(const vector<point> &points, const vector<triangle
     return areas;
 }
 
+bool on_boundary(int i, const vector<line> &lines)
+{
+    int n_L = lines.size();
+
+    for (int j = 0; j < n_L; j++)
+        if (lines[j].i1 == i || lines[j].i2 == i)
+            return true;
+
+    return false;
+}
+
 void compute_bc(int i, triangle t, const vector<point> &points, double &b, double &c)
 {
     point p1, p2, p3;
@@ -255,39 +254,18 @@ void compute_bc(int i, triangle t, const vector<point> &points, double &b, doubl
     c = (x3 - x2) / det;
 }
 
-bool on_boundary(int i, const vector<line> &lines)
-{
-    int n_L = lines.size();
-
-    for (int j = 0; j < n_L; j++)
-    {
-        if (lines[j].i1 == i || lines[j].i2 == i)
-            return true;
-    }
-
-    return false;
-}
-
 vector<double> compute_H(const vector<point> &points, const vector<triangle> &triangles, const vector<line> &lines)
 {
     int n_v = points.size();
     int n_T = triangles.size();
 
     vector<double> H(n_v, 0.0);
-
     vector<double> areas = area_triangles(points, triangles);
 
     for (int i = 0; i < n_v; i++)
-    {
-        if (on_boundary(i, lines) == true)
-        {
             for (int k = 0; k < n_T; k++)
-            {
                 if (triangle_has_vertex(triangles[k], i) == true)
                     H[i] += areas[k];
-            }
-        }
-    }
 
     return H;
 }
@@ -299,20 +277,14 @@ vector<double> assemble_matrix(const vector<point> &points, const vector<triangl
     int n_L = lines.size();
     int n_T = triangles.size();
 
-    // set B to zero
-    vector<double> B(n_v * n_v);
-    fill(begin(B), end(B), 0.0);
+    vector<double> B(n_v * n_v, 0.0);
 
     vector<double> areas = area_triangles(points, triangles);
 
     for (int i = 0; i < n_v; i++)
-    {
-
         for (int j = 0; j < n_v; j++)
         {
-
             for (int k = 0; k < n_T; k++)
-            {
                 if (triangle_has_vertex(triangles[k], i) == true && triangle_has_vertex(triangles[k], j) == true)
                 {
                     double b_ik, b_jk, c_ik, c_jk;
@@ -320,41 +292,38 @@ vector<double> assemble_matrix(const vector<point> &points, const vector<triangl
                     compute_bc(j, triangles[k], points, b_jk, c_jk);
                     B[j + n_v * i] -= areas[k] * (b_ik * b_jk + c_ik * c_jk);
                 }
-            }
 
-            // Robin boundary conditions
-            if (on_boundary(i, lines))
+            if (i == j && on_boundary(i, lines))
             {
-                B[j + n_v * i] += h * T_fluid * 0.5 * length_of_adjacent_lines(points, lines, j); // h * int_Rand T_fluid * phi dx
-
-                // - h * int_Rand u * phi dx
-                if (i == j)
-                    B[j + n_v * i] -= h * 1.0 / 3.0 * length_of_adjacent_lines(points, lines, j);
-                else
-                    for (int k = 0; k < n_L; k++)
+                for (int k = 0; k < n_L; k++)
+                    if (i != k && line_has_vertex(lines[k], i) && on_boundary(k, lines))
                     {
-                        if (line_has_vertex(lines[k], i) && line_has_vertex(lines[k], j))
-                        {
-                            B[j + n_v * i] -= h * 1.0 / 6.0 * euclidean_distance(points[i], points[j]);
-                        }
+                        point p1 = points[lines[k].i1];
+                        point p2 = points[lines[k].i2];
+
+                        B[k + n_v * i] -= h * euclidean_distance(p1, p2) / 6.0;
                     }
+
+                B[j + n_v * i] -= h * length_of_adjacent_lines(points, lines, i) / 3.0;
             }
+
             B[j + n_v * i] /= H[i];
         }
-    }
 
     return B;
 }
 
-vector<double> assemble_vector(const vector<point> &points, const vector<line> &lines, const vector<double> &H, const double sigma)
+vector<double> assemble_vector(const vector<point> &points, const vector<line> &lines, const vector<double> &H, const double &sigma, const double &T_fluid, const double&h)
 {
     int n_v = points.size();
     vector<double> S(n_v, 0.0);
 
     for (int i = 0; i < n_v; i++)
     {
-        if (points[i].y <= 0.3)
+        if (points[i].y <= 0.3 && !on_boundary(i,lines))
             S[i] = 1.0 / 3.0 * sigma;
+        if (on_boundary(i, lines))
+            S[i] += 1.0 / 2.0 * h * T_fluid * length_of_adjacent_lines(points, lines, i) / H[i];
     }
 
     return S;
@@ -366,9 +335,7 @@ vector<double> initial_value(const vector<point> &points, const vector<line> &li
     vector<double> U(n_v);
 
     for (int i = 0; i < n_v; i++)
-    {
         U[i] = 25.0;
-    }
 
     return U;
 }
@@ -386,7 +353,7 @@ int main()
     cout << "Number of triangles: " << triangles.size() << endl;
 
     int t_steps = 100000;
-    double delta_t = 10.0 / (t_steps - 1.0);
+    double delta_t = 25.0 / (t_steps - 1.0);
     const string path = "./out/";
     int file_count = 1000;
 
@@ -399,7 +366,7 @@ int main()
     vector<double> H = compute_H(points, triangles, lines);
 
     vector<double> B = assemble_matrix(points, triangles, lines, H, h, T_fluid);
-    vector<double> S = assemble_vector(points, lines, H, sigma);
+    vector<double> S = assemble_vector(points, lines, H, sigma, T_fluid, h);
 
     vector<double> prev_U = initial_value(points, lines, S);
     vector<double> new_U(n_v);
@@ -413,22 +380,28 @@ int main()
             B[i] += 1;
     }
 
+    ofstream max_heat(path + "max-heat.out");
+
     for (int k = 0; k < t_steps; k++)
     {
+        double max_entry = 0.0;
+
         for (int i = 0; i < n_v; i++)
         {
             double sum = 0.0;
 
             for (int j = 0; j < n_v; j++)
-            {
                 sum += B[j + i * n_v] * prev_U[j];
-            }
 
             new_U[i] = sum + delta_t * S[i];
+            
+            if (new_U[i] > max_entry)
+                max_entry = new_U[i];
         }
 
         if (k % file_count == 0)
         {
+            max_heat << max_entry << endl;
             string filename = "out-t" + to_string(k + 1) + ".vtk";
             write_vtk(path + filename, points, triangles, lines, new_U);
         }
