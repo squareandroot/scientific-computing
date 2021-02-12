@@ -313,17 +313,17 @@ vector<double> assemble_matrix(const vector<point> &points, const vector<triangl
     return B;
 }
 
-vector<double> assemble_vector(const vector<point> &points, const vector<line> &lines, const vector<double> &H, const double &sigma, const double &T_fluid)
+vector<double> assemble_vector(const vector<point> &points, const vector<line> &lines, const vector<double> &H, const double &sigma, const double &T_fluid, const double&h)
 {
     int n_v = points.size();
     vector<double> S(n_v, 0.0);
 
     for (int i = 0; i < n_v; i++)
     {
-        if (points[i].y <= 0.3)
+        if (points[i].y <= 0.3 && !on_boundary(i,lines))
             S[i] = 1.0 / 3.0 * sigma;
         if (on_boundary(i, lines))
-            S[i] += 1.0 / 2.0 * T_fluid * length_of_adjacent_lines(points, lines, i) / H[i];
+            S[i] += 1.0 / 2.0 * h * T_fluid * length_of_adjacent_lines(points, lines, i) / H[i];
     }
 
     return S;
@@ -366,7 +366,7 @@ int main()
     vector<double> H = compute_H(points, triangles, lines);
 
     vector<double> B = assemble_matrix(points, triangles, lines, H, h, T_fluid);
-    vector<double> S = assemble_vector(points, lines, H, sigma, T_fluid);
+    vector<double> S = assemble_vector(points, lines, H, sigma, T_fluid, h);
 
     vector<double> prev_U = initial_value(points, lines, S);
     vector<double> new_U(n_v);
