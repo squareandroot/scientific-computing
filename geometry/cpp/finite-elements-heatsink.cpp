@@ -2,6 +2,7 @@
 #include <fstream>
 #include <vector>
 #include <cmath>
+#include <boost/filesystem.hpp>
 using namespace std;
 
 struct point
@@ -65,17 +66,14 @@ void read_mesh(string filename, vector<point> &points, vector<triangle> &triangl
 
     fs >> s;
     fs >> s;
-    cout << s << " (should be $Elements)" << endl;
 
     int num_elements;
     fs >> num_elements;
 
-    cout << "read element of type ";
     for (int i = 0; i < num_elements; i++)
     {
         int id, type, unused;
         fs >> id >> type >> unused >> unused >> unused;
-        cout << type << " ";
 
         if (type == 1)
         {
@@ -96,8 +94,6 @@ void read_mesh(string filename, vector<point> &points, vector<triangle> &triangl
                 fs.get(c);
         }
     }
-
-    cout << endl;
 }
 
 void write_vtk(string filename, vector<point> &points, vector<triangle> &triangles, vector<line> &lines, vector<double> &point_data)
@@ -340,21 +336,26 @@ vector<double> initial_value(const vector<point> &points, const vector<line> &li
     return U;
 }
 
-int main()
+void finite_elements(string &parameters)
 {
+    string out_path = "./out/out_" + parameters + "/";
+    string in_path = "../cad/heatsink/heatsink_" + parameters + ".msh"; 
+
+    boost::filesystem::create_directory(boost::filesystem::path(out_path));
+
     // read data
     vector<point> points;
     vector<triangle> triangles;
     vector<line> lines;
-    read_mesh("../cad/heatsink/heatsink_8_0.3_1.5.msh", points, triangles, lines);
+    read_mesh(in_path, points, triangles, lines);
     // read_mesh("simple.msh", points, triangles, lines);
 
-    cout << "Number of points:    " << points.size() << endl;
-    cout << "Number of triangles: " << triangles.size() << endl;
+    // cout << "Number of points:    " << points.size() << endl;
+    // cout << "Number of triangles: " << triangles.size() << endl;
 
     int t_steps = 100000;
     double delta_t = 25.0 / (t_steps - 1.0);
-    const string path = "./out/";
+
     int file_count = 1000;
 
     double sigma = 100.0;
@@ -371,7 +372,7 @@ int main()
     vector<double> prev_U = initial_value(points, lines, S);
     vector<double> new_U(n_v);
 
-    write_vtk(path + "out-t0.vtk", points, triangles, lines, prev_U);
+    write_vtk(out_path + "out-t0.vtk", points, triangles, lines, prev_U);
 
     for (int i = 0; i < n_v * n_v; i++)
     {
@@ -380,7 +381,7 @@ int main()
             B[i] += 1;
     }
 
-    ofstream max_heat(path + "max-heat.out");
+    ofstream max_heat(out_path + "max-heat.out");
 
     for (int k = 0; k < t_steps; k++)
     {
@@ -403,9 +404,45 @@ int main()
         {
             max_heat << max_entry << endl;
             string filename = "out-t" + to_string(k + 1) + ".vtk";
-            write_vtk(path + filename, points, triangles, lines, new_U);
+            write_vtk(out_path + filename, points, triangles, lines, new_U);
         }
 
         prev_U.swap(new_U);
     }
+}
+
+string progress_bar(int done, int todo)
+{
+    string out = "[";
+
+    for (int i = 0; i < done; i++)
+    {
+        out += "#";
+    }
+
+        for (int i = 0; i < todo; i++)
+    {
+        out += "-";
+    }
+
+    out += "]";
+
+    return out;
+}
+
+int main()
+{
+    vector<string> parameter_list = {"8_0.3_1.5", "8_0.3_2.5", "13_0.2_1.5", "13_0.2_2.5", "30_0.1_1.5", "30_0.1_2.5"};
+
+    int len = parameter_list.size();
+
+    cout << "Progress: " + progress_bar(0, len) << flush;
+
+    for (int i = 0; i < len; i++)
+    {
+        finite_elements(parameter_list[i]);
+        cout << "\rProgress: " + progress_bar(i+1, len-i-1) << flush;
+    }
+        
+    cout << endl;
 }
