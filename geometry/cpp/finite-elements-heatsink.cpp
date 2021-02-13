@@ -259,9 +259,9 @@ vector<double> compute_H(const vector<point> &points, const vector<triangle> &tr
     vector<double> areas = area_triangles(points, triangles);
 
     for (int i = 0; i < n_v; i++)
-            for (int k = 0; k < n_T; k++)
-                if (triangle_has_vertex(triangles[k], i) == true)
-                    H[i] += areas[k];
+        for (int k = 0; k < n_T; k++)
+            if (triangle_has_vertex(triangles[k], i) == true)
+                H[i] += areas[k];
 
     return H;
 }
@@ -309,14 +309,14 @@ vector<double> assemble_matrix(const vector<point> &points, const vector<triangl
     return B;
 }
 
-vector<double> assemble_vector(const vector<point> &points, const vector<line> &lines, const vector<double> &H, const double &sigma, const double &T_fluid, const double&h)
+vector<double> assemble_vector(const vector<point> &points, const vector<line> &lines, const vector<double> &H, const double &sigma, const double &T_fluid, const double &h)
 {
     int n_v = points.size();
     vector<double> S(n_v, 0.0);
 
     for (int i = 0; i < n_v; i++)
     {
-        if (points[i].y <= 0.3 && !on_boundary(i,lines))
+        if (points[i].y <= 0.3 && !on_boundary(i, lines))
             S[i] = 1.0 / 3.0 * sigma;
         if (on_boundary(i, lines))
             S[i] += 1.0 / 2.0 * h * T_fluid * length_of_adjacent_lines(points, lines, i) / H[i];
@@ -339,7 +339,7 @@ vector<double> initial_value(const vector<point> &points, const vector<line> &li
 void finite_elements(string &parameters)
 {
     string out_path = "./out/out_" + parameters + "/";
-    string in_path = "../cad/heatsink/heatsink_" + parameters + ".msh"; 
+    string in_path = "../cad/heatsink/heatsink_" + parameters + ".msh";
 
     boost::filesystem::create_directory(boost::filesystem::path(out_path));
 
@@ -381,7 +381,7 @@ void finite_elements(string &parameters)
             B[i] += 1;
     }
 
-    ofstream max_heat(out_path + "max-heat.out");
+    ofstream max_heat(out_path + "max-heat_" + parameters + ".out");
 
     for (int k = 0; k < t_steps; k++)
     {
@@ -395,7 +395,7 @@ void finite_elements(string &parameters)
                 sum += B[j + i * n_v] * prev_U[j];
 
             new_U[i] = sum + delta_t * S[i];
-            
+
             if (new_U[i] > max_entry)
                 max_entry = new_U[i];
         }
@@ -416,14 +416,10 @@ string progress_bar(int done, int todo)
     string out = "[";
 
     for (int i = 0; i < done; i++)
-    {
         out += "#";
-    }
 
-        for (int i = 0; i < todo; i++)
-    {
+    for (int i = 0; i < todo; i++)
         out += "-";
-    }
 
     out += "]";
 
@@ -441,8 +437,8 @@ int main()
     for (int i = 0; i < len; i++)
     {
         finite_elements(parameter_list[i]);
-        cout << "\rProgress: " + progress_bar(i+1, len-i-1) << flush;
+        cout << "\rProgress: " + progress_bar(i + 1, len - i - 1) << flush;
     }
-        
+
     cout << endl;
 }
