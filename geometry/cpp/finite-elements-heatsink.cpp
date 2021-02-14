@@ -428,16 +428,31 @@ string progress_bar(int done, int todo)
 
 int main()
 {
-    vector<string> parameter_list = {"8_0.3_1.5", "8_0.3_2.5", "13_0.2_1.5", "13_0.2_2.5", "30_0.1_1.5", "30_0.1_2.5"};
+    vector<string> parameter_list = {"30_0.1_2.5",
+                                     "30_0.1_0.5",
+                                     "13_0.2_2.5",
+                                     "8_0.3_1.5",
+                                     "30_0.1_1.5",
+                                     "30_0.1_1.0",
+                                     "30_0.1_0.3",
+                                     "13_0.2_1.5",
+                                     "8_0.3_2.5",
+                                     "8_0.5_1.5"};
 
     int len = parameter_list.size();
 
-    cout << "Progress: " + progress_bar(0, len) << flush;
+    cout << "Progress: " + progress_bar(0, len) << " :: "
+         << "Working on: " << parameter_list[0] << " " << flush;
 
     for (int i = 0; i < len; i++)
     {
         finite_elements(parameter_list[i]);
-        cout << "\rProgress: " + progress_bar(i + 1, len - i - 1) << flush;
+        if (i + 1 == len)
+            cout << "\rProgress: " + progress_bar(i + 1, len - i - 1) << " :: "
+                 << "Done!                " << flush;
+        else
+            cout << "\rProgress: " + progress_bar(i + 1, len - i - 1) << " :: "
+                 << "Working on: " << parameter_list[i + 1] << " " << flush;
     }
 
     cout << endl;

@@ -12,14 +12,17 @@ for subdir, dirs, files in os.walk(rootdir):
 
 source_files.sort()
 
+fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(20,7))
+
+fins_to_axes = {"8": ax1, "13": ax2, "30": ax3}
+
 for file in source_files:
     data = np.loadtxt(file)
+    ax = fins_to_axes[file.split("_")[-3]]
     label_text = "; ".join(file.rstrip(".out").split("_")[-3:])
-    plt.plot(data, label=label_text)
+    ax.plot(data, label=label_text)
+    ax.legend()
+    ax.set(xlabel="t'", ylabel="Temperature [°C]", box_aspect=1)
 
-plt.legend()
-plt.title("Maximum temperature")
-plt.xlabel("t'")
-plt.ylabel("Temperature [°C]")
-# plt.savefig("temperature_plot.pdf", bbox_inches="tight", pad_inches=0.05)
-plt.show()
+fig.savefig("temperature_plot.jpeg", bbox_inches="tight", pad_inches=0.05)
+fig.show()
