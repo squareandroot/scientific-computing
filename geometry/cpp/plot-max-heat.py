@@ -24,5 +24,5 @@ for file in source_files:
     ax.legend()
     ax.set(xlabel="t'", ylabel="Temperature [°C]", box_aspect=1)
 
-fig.savefig("temperature_plot.jpeg", bbox_inches="tight", pad_inches=0.05)
+# fig.savefig("temperature_plot.pdf", bbox_inches="tight", pad_inches=0.05)
 fig.show()

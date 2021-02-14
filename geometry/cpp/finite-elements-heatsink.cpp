@@ -418,7 +418,7 @@ string progress_bar(int done, int todo)
         out += "#";
 
     for (int i = 0; i < todo; i++)
-        out += "-";
+        out += ".";
 
     out += "]";
 
