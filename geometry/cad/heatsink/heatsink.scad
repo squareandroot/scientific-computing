@@ -1,6 +1,6 @@
-num_fins=30;
-fin_width=0.1;
-fin_height=1.0;
+num_fins=8;
+fin_width=0.5;
+fin_height=1.5;
 
 difference() {
     translate([-2.5,0,0]) square([5,fin_height]);
