@@ -348,7 +348,6 @@ void finite_elements(string &parameters)
     vector<triangle> triangles;
     vector<line> lines;
     read_mesh(in_path, points, triangles, lines);
-    // read_mesh("simple.msh", points, triangles, lines);
 
     // cout << "Number of points:    " << points.size() << endl;
     // cout << "Number of triangles: " << triangles.size() << endl;
