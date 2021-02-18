@@ -427,17 +427,17 @@ string progress_bar(int done, int todo)
 
 int main()
 {
-    vector<string> parameter_list = {"30_0.1_2.5",
-                                     "30_0.1_0.5",
-                                     "13_0.2_2.5",
+    vector<string> parameter_list = {"8_0.1_1.5",
+                                     "8_0.2_1.5",
                                      "8_0.3_1.5",
-                                     "30_0.1_1.5",
-                                     "30_0.1_1.0",
-                                     "30_0.1_0.3",
+                                     "13_0.1_1.5",
                                      "13_0.2_1.5",
-                                     "8_0.3_2.5",
-                                     "8_0.5_1.5"};
-
+                                     "13_0.3_1.5",
+                                     "30_0.1_0.5",
+                                     "30_0.1_1.0",
+                                     "30_0.1_1.5",
+                                     "30_0.1_2.0"};
+                   
     int len = parameter_list.size();
 
     cout << "Progress: " + progress_bar(0, len) << " :: "
