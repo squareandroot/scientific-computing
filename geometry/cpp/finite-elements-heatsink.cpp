@@ -427,6 +427,8 @@ string progress_bar(int done, int todo)
 
 int main()
 {
+    boost::filesystem::create_directory(boost::filesystem::path("./out/"));
+
     vector<string> parameter_list = {"13_0.1_1.5",
                                      "13_0.2_1.0",
                                      "13_0.2_1.5",
