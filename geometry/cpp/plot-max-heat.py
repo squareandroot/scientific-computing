@@ -22,37 +22,37 @@ for file in source_files:
     # 8 fins, 0.3 width, height variation
     if parameter_string in ["8_0.3_1.0", "8_0.3_1.5", "8_0.3_2.0"]:
         ax1.plot(data, label=label_text)
-        ax1.legend()
+        ax1.legend(loc=4)
         ax1.set(xlabel="t'", ylabel="Temperature [°C]", box_aspect=1)
 
     # 13 fins, 0.2 width, height variation
     if parameter_string in ["13_0.2_1.0", "13_0.2_1.5", "13_0.2_2.0"]:
         ax2.plot(data, label=label_text)
-        ax2.legend()
+        ax2.legend(loc=4)
         ax2.set(xlabel="t'", ylabel="Temperature [°C]", box_aspect=1)
 
    # 30 fins, 0.1 width, height variation
     if parameter_string in ["30_0.1_1.0", "30_0.1_1.5", "30_0.1_2.0"]:
         ax3.plot(data, label=label_text)
-        ax3.legend()
+        ax3.legend(loc=4)
         ax3.set(xlabel="t'", ylabel="Temperature [°C]", box_aspect=1)
 
     # 8 fins, width variation, 1.5 height
     if parameter_string in ["8_0.2_1.5", "8_0.3_1.5", "8_0.5_1.5"]:
         ax4.plot(data, label=label_text)
-        ax4.legend()
+        ax4.legend(loc=4)
         ax4.set(xlabel="t'", ylabel="Temperature [°C]", box_aspect=1)
 
     # 13 fins, width variation, 1.5 height
     if parameter_string in ["13_0.1_1.5", "13_0.2_1.5", "13_0.3_1.5"]:
         ax5.plot(data, label=label_text)
-        ax5.legend()
+        ax5.legend(loc=4)
         ax5.set(xlabel="t'", ylabel="Temperature [°C]", box_aspect=1)
 
     # best results for each number of fins
     if parameter_string in ["8_0.3_1.5", "13_0.2_1.5", "30_0.1_1.5"]:
         ax6.plot(data, label=label_text)
-        ax6.legend()
+        ax6.legend(loc=4)
         ax6.set(xlabel="t'", ylabel="Temperature [°C]", box_aspect=1)
 
 # save entire plot
@@ -84,6 +84,3 @@ fig.savefig("temperature_plot_13_var_1.5.pdf", bbox_inches=ax5_extent.expanded(1
 ax6_bbox = ax6.get_tightbbox(fig.canvas.get_renderer())
 ax6_extent = ax6_bbox.transformed(fig.dpi_scale_trans.inverted())
 fig.savefig("temperature_plot_best_of_num_fins.pdf", bbox_inches=ax6_extent.expanded(1.01,1.01))
-
-
-

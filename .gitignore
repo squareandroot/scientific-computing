@@ -1,6 +1,12 @@
 ### Folders ###
 .vscode/
 
+### Custom ###
+*.csg
+*.step
+*.geo
+*.pdf
+
 ### C++ ###
 # Prerequisites
 *.d

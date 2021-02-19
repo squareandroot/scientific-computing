@@ -353,7 +353,7 @@ void finite_elements(string &parameters)
     // cout << "Number of triangles: " << triangles.size() << endl;
 
     int t_steps = 100000;
-    double delta_t = 25.0 / (t_steps - 1.0);
+    double delta_t = 50.0 / (t_steps - 1.0);
 
     int file_count = 1000;
 
@@ -427,17 +427,20 @@ string progress_bar(int done, int todo)
 
 int main()
 {
-    vector<string> parameter_list = {"8_0.1_1.5",
-                                     "8_0.2_1.5",
-                                     "8_0.3_1.5",
-                                     "13_0.1_1.5",
+    vector<string> parameter_list = {"13_0.1_1.5",
+                                     "13_0.2_1.0",
                                      "13_0.2_1.5",
+                                     "13_0.2_2.0",
                                      "13_0.3_1.5",
-                                     "30_0.1_0.5",
                                      "30_0.1_1.0",
                                      "30_0.1_1.5",
-                                     "30_0.1_2.0"};
-                   
+                                     "30_0.1_2.0",
+                                     "8_0.2_1.5",
+                                     "8_0.3_1.0",
+                                     "8_0.3_1.5",
+                                     "8_0.3_2.0",
+                                     "8_0.5_1.5"};
+
     int len = parameter_list.size();
 
     cout << "Progress: " + progress_bar(0, len) << " :: "
